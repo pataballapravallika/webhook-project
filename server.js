@@ -4,20 +4,22 @@ const app = express();
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+    res.status(200).send("Webhook server running");
+});
+
 app.post("/github-webhook", (req, res) => {
 
     console.log("Webhook received");
 
-    console.log(req.body);
+    console.log(JSON.stringify(req.body, null, 2));
 
+    // SEND RESPONSE IMMEDIATELY
     res.status(200).send("Success");
 });
 
-app.get("/", (req, res) => {
-    res.send("Webhook server running");
-});
+const PORT = process.env.PORT || 3000;
 
-
-app.listen(process.env.PORT || 3000, () => {
-    console.log("Server started");
+app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
 });
