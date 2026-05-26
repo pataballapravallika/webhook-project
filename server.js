@@ -8,6 +8,7 @@ app.get("/", (req, res) => {
     res.status(200).send("Webhook server running");
 });
 
+
 app.post("/github-webhook", (req, res) => {
 
     console.log("Webhook received");
