@@ -1,4 +1,5 @@
 const express = require("express");
+const nodemailer = require("nodemailer");
 
 const app = express();
 
@@ -8,15 +9,50 @@ app.get("/", (req, res) => {
     res.status(200).send("Webhook server running");
 });
 
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
-app.post("/github-webhook", (req, res) => {
+app.post("/github-webhook", async (req, res) => {
 
-    console.log("Webhook received");
+    try {
 
-    console.log(JSON.stringify(req.body, null, 2));
+        console.log("Webhook received");
 
-    // SEND RESPONSE IMMEDIATELY
-    res.status(200).send("Success");
+        const commits = req.body.commits || [];
+
+        const commitMessages = commits
+            .map(commit => `• ${commit.message}`)
+            .join("\n");
+
+        const repo = req.body.repository.full_name;
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: process.env.TO_EMAIL,
+            subject: "New GitHub Push Event",
+            text: `
+Repository: ${repo}
+
+Commit Messages:
+${commitMessages}
+            `
+        });
+
+        console.log("Email sent successfully");
+
+        res.status(200).send("Success");
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).send("Error sending mail");
+    }
 });
 
 const PORT = process.env.PORT || 3000;
