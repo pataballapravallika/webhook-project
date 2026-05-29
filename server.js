@@ -30,7 +30,6 @@ app.post("/github-webhook", async (req, res) => {
             .join("\n");
 
         const repo = req.body.repository.full_name;
-
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: process.env.TO_EMAIL,
