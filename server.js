@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 const express = require("express");
 const nodemailer = require("nodemailer");
 
@@ -11,19 +9,11 @@ app.get("/", (req, res) => {
     res.status(200).send("Webhook server running");
 });
 
-const emailUser = process.env.EMAIL_USER || process.env.EMAIL;
-const emailPass = (process.env.EMAIL_PASS || process.env.APP_PASSWORD || "").replace(/\s+/g, "");
-const toEmail = process.env.TO_EMAIL;
-
-if (!emailUser || !emailPass) {
-    console.error("Missing email configuration. Set EMAIL_USER/EMAIL_PASS or EMAIL/APP_PASSWORD.");
-}
-
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: emailUser,
-        pass: emailPass
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
 
@@ -33,25 +23,17 @@ app.post("/github-webhook", async (req, res) => {
 
         console.log("Webhook received");
 
-        const commits = Array.isArray(req.body.commits) ? req.body.commits : [];
+        const commits = req.body.commits || [];
 
         const commitMessages = commits
-            .map(commit => `• ${commit.message || "(no commit message)"}`)
-            .join("\n") || "No commits included";
+            .map(commit => `• ${commit.message}`)
+            .join("\n");
 
-        const repo = req.body.repository?.full_name || "unknown repository";
-
-        if (!emailUser || !emailPass) {
-            throw new Error("Email configuration is missing");
-        }
-
-        if (!toEmail) {
-            throw new Error("TO_EMAIL is missing");
-        }
+        const repo = req.body.repository.full_name;
 
         await transporter.sendMail({
-            from: emailUser,
-            to: toEmail,
+            from: process.env.EMAIL_USER,
+            to: process.env.TO_EMAIL,
             subject: "New GitHub Push Event",
             text: `
 Repository: ${repo}
@@ -69,7 +51,7 @@ ${commitMessages}
 
         console.error(error);
 
-        res.status(500).send(error.message || "Error sending mail");
+        res.status(500).send("Error sending mail");
     }
 });
 
